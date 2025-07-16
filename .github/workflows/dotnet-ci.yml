@@ -1,0 +1,72 @@
+name: .NET CI
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  build-test:
+    name: Build, Test, and Coverage
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dotnet-version: [ '6.0.x', '7.0.x' ]
+    steps:
+      # Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Cache NuGet packages
+      - name: Cache NuGet packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      # Setup .NET
+      - name: Setup .NET ${{ matrix.dotnet-version }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ matrix.dotnet-version }}
+
+      # Restore dependencies
+      - name: Restore dependencies
+        run: dotnet restore
+
+      # Build (fail on warnings)
+      - name: Build
+        run: dotnet build --no-restore --configuration Release -warnaserror
+
+      # Run tests with coverage and publish results
+      - name: Test with coverage
+        run: dotnet test --no-build --configuration Release /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:Threshold=90
+
+      # Publish test results (for PRs)
+      - name: Publish Test Results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results-${{ matrix.dotnet-version }}
+          path: '**/TestResults/*.xml'
+
+      # Upload coverage report
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report-${{ matrix.dotnet-version }}
+          path: '**/coverage.cobertura.xml'
+
+  # Optional: PR status check job (can be extended for code quality, lint, etc.)
+  pr-status:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs: build-test
+    steps:
+      - name: PR Status
+        run: echo "All checks passed for PR #${{ github.event.pull_request.number }}" 
