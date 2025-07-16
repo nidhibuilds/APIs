@@ -50,14 +50,14 @@ jobs:
       # Publish test results (for PRs)
       - name: Publish Test Results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ matrix.dotnet-version }}
           path: '**/TestResults/*.xml'
 
       # Upload coverage report
       - name: Upload coverage report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-report-${{ matrix.dotnet-version }}
           path: '**/coverage.cobertura.xml'
