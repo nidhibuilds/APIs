@@ -35,17 +35,17 @@ jobs:
         with:
           dotnet-version: ${{ matrix.dotnet-version }}
 
-      # Restore dependencies
+      # Restore dependencies using the solution file
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore APIs.sln
 
-      # Build (fail on warnings)
+      # Build all projects in the solution (fail on warnings)
       - name: Build
-        run: dotnet build --no-restore --configuration Release -warnaserror
+        run: dotnet build APIs.sln --no-restore --configuration Release -warnaserror
 
       # Run tests with coverage and publish results
       - name: Test with coverage
-        run: dotnet test --no-build --configuration Release /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:Threshold=90
+        run: dotnet test APIs.sln --no-build --configuration Release /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:Threshold=90
 
       # Publish test results (for PRs)
       - name: Publish Test Results
@@ -69,4 +69,6 @@ jobs:
     needs: build-test
     steps:
       - name: PR Status
-        run: echo "All checks passed for PR #${{ github.event.pull_request.number }}" 
+        run: echo "All checks passed for PR #${{ github.event.pull_request.number }}"
+
+# NOTE: The solution file (APIs.sln) must be present and up to date for CI to work with all projects. Add new projects to the solution using 'dotnet sln APIs.sln add <path-to-csproj>'. 
